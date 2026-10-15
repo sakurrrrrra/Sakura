@@ -145,7 +145,7 @@
         <div class="field"><label>Temperature</label><input type="number" id="temp" value="0.4" step="0.1" min="0" max="2"></div>
         <div class="field"><label>抽卡 max_tokens</label><input type="number" id="maxTok" value="4000" step="500" min="500"></div>
         <div class="field"><label>扫描分段大小（字符）</label><input type="number" id="chunkSize" value="40000" step="5000" min="10000"></div>
-        <div class="field"><label>扫描段数上限（越大扫得越全）</label><input type="number" id="scanCap" value="40" step="5" min="1"></div>
+        <div class="field"><label>扫描段数上限（默认100段，可自行调整）</label><input type="number" id="scanCap" value="100" step="5" min="1"></div>
         <div class="field"><label>相关段落上下文上限（字符）</label><input type="number" id="ctxCap" value="90000" step="10000" min="10000"></div>
         <div class="field"><label>全文模式上下文上限（字符）</label><input type="number" id="fullCap" value="120000" step="10000" min="10000"></div>
       </div>
@@ -590,7 +590,7 @@ function saveJSON(key,val){ store.set(key, JSON.stringify(val)); }
 
 // ---------- API 配置（多套，可切换） ----------
 const PROFILE_FIELDS=["apiFormat","baseUrl","apiKey","model","temp","maxTok","chunkSize","scanCap","ctxCap","fullCap"];
-function blankProfile(name){ return {name, apiFormat:"openai", baseUrl:"", apiKey:"", model:"", temp:"0.4", maxTok:"4000", chunkSize:"40000", scanCap:"40", ctxCap:"90000", fullCap:"120000"}; }
+function blankProfile(name){ return {name, apiFormat:"openai", baseUrl:"", apiKey:"", model:"", temp:"0.4", maxTok:"4000", chunkSize:"40000", scanCap:"100", ctxCap:"90000", fullCap:"120000"}; }
 let apiProfiles = loadJSON("cc_api_profiles", null);
 if(!Array.isArray(apiProfiles) || !apiProfiles.length){
   // 首次：尽量沿用旧的单套设置
@@ -988,7 +988,7 @@ $("scanBtn").onclick=async()=>{
   }else{
     clearLog("scanLog"); characters=[]; selectedNames=[]; renderChars(); updateGenBtn();
     chunks=[]; for(let i=0;i<text.length;i+=size) chunks.push(text.slice(i,i+size));
-    cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||40));
+    cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||100));
     map=new Map(); startI=0;
     scanState={ len:text.length, chunks, cap, next:0, map };
     if(chunks.length>cap) logTo("scanLog","小说较长，仅扫描前 "+cap+" 段。","e");
@@ -1715,7 +1715,7 @@ async function wbExtractCore(signal){
     logTo("wbLog","从第 "+(startI+1)+"/"+cap+" 段继续提取…");
   }else{
     chunks=[]; for(let i=0;i<text.length;i+=size) chunks.push(text.slice(i,i+size));
-    cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||40));
+    cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||100));
     map=new Map(); startI=0;
     wbState={ len:text.length, chunks, cap, next:0, map };
     if(chunks.length>cap) logTo("wbLog","小说较长，仅提取前 "+cap+" 段。","e");
@@ -1962,7 +1962,7 @@ async function wbPlotCore(signal){
   $("wbMsg").innerHTML='<span class="spinner"></span>剧情分段…';
   const size=Math.max(50000, parseInt(els.chunkSize.value)||40000);
   const chunks=[]; for(let i=0;i<text.length;i+=size) chunks.push(text.slice(i,i+size));
-  const cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||40));
+  const cap=Math.min(chunks.length, Math.max(1, parseInt(els.scanCap.value)||100));
   // 断点续跑：同一本书、上次没跑完 → 从上次的段接着来（已生成的剧情条目保留在 wbEntries 里）
   const resuming = wbPlotState && wbPlotState.len===text.length && wbPlotState.cap===cap && wbPlotState.next<cap;
   let startI = resuming ? wbPlotState.next : 0;
